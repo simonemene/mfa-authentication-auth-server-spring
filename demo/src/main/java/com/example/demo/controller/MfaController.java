@@ -1,9 +1,12 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.MfaSetupView;
+import com.example.demo.dto.TokenResponse;
 import com.example.demo.service.MfaService;
 import com.example.demo.service.MfaSessionService;
+import com.example.demo.service.TokenService;
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,20 +15,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+@RequiredArgsConstructor
 @Controller
 @RequestMapping("/mfa")
 public class MfaController {
 
 	private final MfaService mfaService;
 	private final MfaSessionService mfaSessionService;
+	private final TokenService tokenService;
 
-	public MfaController(
-			MfaService mfaService,
-			MfaSessionService mfaSessionService
-	) {
-		this.mfaService = mfaService;
-		this.mfaSessionService = mfaSessionService;
-	}
+
 
 	@GetMapping("/setup")
 	public String setup(Authentication authentication, Model model) {
@@ -36,21 +35,36 @@ public class MfaController {
 		return "mfa-setup";
 	}
 
+
 	@PostMapping("/setup/verify")
-	public String verifySetup(
+	public String verifyToken(
 			@RequestParam String code,
 			HttpSession session,
 			Model model,
 			Authentication authentication
 	) {
-		boolean valid = mfaService.verifySetup(authentication.getName(), code);
+		String username = authentication.getName();
+
+		boolean valid = mfaService.verifySetup(username, code);
 
 		if (!valid) {
 			model.addAttribute("error", "Codice non valido. Riprova.");
+
+			MfaSetupView setupView = mfaService.prepareSetup(username);
+			model.addAttribute("qrCode", setupView.qrCodeBase64());
+
 			return "mfa-setup-verify";
 		}
 
 		session.setAttribute("MFA_VERIFIED", true);
+
+		TokenResponse tokenResponse = tokenService.generateTokens(username);
+
+		model.addAttribute("accessToken", tokenResponse.accessToken());
+		model.addAttribute("refreshToken", tokenResponse.refreshToken());
+		model.addAttribute("tokenType", tokenResponse.tokenType());
+		model.addAttribute("expiresInSeconds", tokenResponse.expiresInSeconds());
+		model.addAttribute("refreshExpiresInSeconds", tokenResponse.refreshExpiresInSeconds());
 
 		return "mfa-ok";
 	}
@@ -67,21 +81,31 @@ public class MfaController {
 			Model model,
 			Authentication authentication
 	) {
+		String username = authentication.getName();
 
-		boolean valid = mfaService.verifyLogin(authentication.getName(), code);
+		boolean valid = mfaService.verifyLogin(username, code);
 
 		if (!valid) {
 			model.addAttribute("error", "Codice MFA non valido");
 			return "mfa";
 		}
 
-		mfaSessionService.markMfaVerified(session);
+		session.setAttribute("MFA_VERIFIED", true);
 
-		return "redirect:/";
+		TokenResponse tokenResponse = tokenService.generateTokens(username);
+
+		model.addAttribute("accessToken", tokenResponse.accessToken());
+		model.addAttribute("refreshToken", tokenResponse.refreshToken());
+		model.addAttribute("tokenType", tokenResponse.tokenType());
+		model.addAttribute("expiresInSeconds", tokenResponse.expiresInSeconds());
+		model.addAttribute("refreshExpiresInSeconds", tokenResponse.refreshExpiresInSeconds());
+
+		return "mfa-ok";
 	}
 
 	@PostMapping("/setup/confirm")
 	public String confirmSetup() {
 		return "mfa-setup-verify";
 	}
+
 }
