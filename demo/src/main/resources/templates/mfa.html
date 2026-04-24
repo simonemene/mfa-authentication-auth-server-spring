@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Verifica MFA</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 430px;
+            padding: 24px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 32px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #4338ca;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+            line-height: 1.2;
+            color: #111827;
+        }
+
+        .subtitle {
+            margin: 0 0 26px;
+            color: #6b7280;
+            line-height: 1.5;
+            font-size: 15px;
+        }
+
+        .otp-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: #eef2ff;
+            color: #4f46e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin-bottom: 22px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        input {
+            width: 100%;
+            height: 52px;
+            border-radius: 14px;
+            border: 1px solid #d1d5db;
+            padding: 0 14px;
+            font-size: 20px;
+            letter-spacing: 0.22em;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+        }
+
+        button {
+            width: 100%;
+            height: 48px;
+            border: none;
+            border-radius: 14px;
+            background: #4f46e5;
+            color: white;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.28);
+        }
+
+        button:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            margin-top: 18px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .hint {
+            margin-top: 18px;
+            color: #6b7280;
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+    <div class="card">
+        <div class="otp-icon">🔐</div>
+
+        <span class="badge">Accesso protetto</span>
+
+        <h1>Verifica MFA</h1>
+
+        <p class="subtitle">
+            Inserisci il codice a 6 cifre generato dalla tua app Authenticator.
+        </p>
+
+        <form method="post" action="/mfa/verify">
+            <div class="form-group">
+                <label for="code">Codice TOTP</label>
+                <input
+                        id="code"
+                        name="code"
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]{6}"
+                        maxlength="6"
+                        placeholder="000000"
+                        autocomplete="one-time-code"
+                        required>
+            </div>
+
+            <button type="submit">Verifica codice</button>
+        </form>
+
+        <p class="error" th:if="${error}" th:text="${error}"></p>
+
+        <p class="hint">
+            Il codice si aggiorna ogni 30 secondi. Usa sempre quello attualmente visibile nell’app.
+        </p>
+    </div>
+</div>
+
+</body>
+</html>
